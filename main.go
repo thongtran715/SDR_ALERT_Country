@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -43,16 +44,35 @@ func network() map[string]string {
 func main() {
 	cdrMTable := map[string]CDR{}
 	cdrNTable := map[string]CDR{}
-
 	const longForm = "20060102150405"
-	file, err := os.Open("../CDR_20180702_2.txt")
 
+	fileName := flag.String("fileName", "", "a string")
+
+	flag.Parse()
+
+	if *fileName == "" {
+		log.Fatal("Missing flag for file name. Put the flag -fileName='name of your CDR file'")
+	}
+	//	"../CDR_20180702_2.txt"
+	file, err := os.Open(*fileName)
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	// Closing file later
 	defer file.Close()
+
+	// Making buffer Read
 	scanner := bufio.NewScanner(file)
+
+	// Initiate tree
+	tree := CountryTree{
+		CountryNodeRoot: nil,
+	}
+
+	// Network storing country and operator
+	countryOperatorMCCMNC := network()
+
+	// Scanner for scan
 	for scanner.Scan() {
 		arr := strings.Split(scanner.Text(), ";")
 
@@ -69,6 +89,31 @@ func main() {
 				_, ok := cdrMTable[id]
 				if !ok {
 					cdrMTable[id] = aCDR
+				}
+				imsi := aCDR.operator
+				if imsi != "000000" {
+					str := strings.Split(countryOperatorMCCMNC[imsi], ";")
+					ops := Operators{
+						operatorName: str[1],
+					}
+					tree.addCountry(str[0], ops)
+					switch aCDR.state {
+					case "Initial":
+						tree.findAndIncrement("totalMessagesInitial", str[1], str[0])
+					case "Rejected":
+						tree.findAndIncrement("totalMessagesRejected", str[1], str[0])
+					case "Delivered":
+						tree.findAndIncrement("totalMessagesDelivered", str[1], str[0])
+					case "Expired":
+						tree.findAndIncrement("totalMessagesExpired", str[1], str[0])
+					case "Undeliverable":
+						tree.findAndIncrement("totalMessagesUndeliverable", str[1], str[0])
+					case "Deleted":
+						tree.findAndIncrement("totalMessagesDeleted", str[1], str[0])
+					case "Delivered direct":
+						tree.findAndIncrement("totalMessagesDeliveredDirect", str[1], str[0])
+					}
+					tree.findAndIncrement("totalMessagesReceived", str[1], str[0])
 				}
 			}
 		} else {
@@ -98,24 +143,20 @@ func main() {
 		}
 	}
 	fmt.Println("Processing.......")
-	countryOperatorMCCMNC := network()
 
-	tree := CountryTree{
-		CountryNodeRoot: nil,
-	}
-	for keyM := range cdrMTable {
-		valueN, existed := cdrNTable[keyM]
-		if existed {
-			imsi := valueN.operator
-			if imsi != "000000" {
-				str := strings.Split(countryOperatorMCCMNC[imsi], ";")
-				ops := Operators{
-					operatorName: str[1],
-				}
-				tree.addCountry(str[0], ops)
-			}
-		}
-	}
+	// for keyM := range cdrMTable {
+	// 	valueN, existed := cdrNTable[keyM]
+	// 	if existed {
+	// 		imsi := valueN.operator
+	// 		if imsi != "000000" {
+	// 			str := strings.Split(countryOperatorMCCMNC[imsi], ";")
+	// 			ops := Operators{
+	// 				operatorName: str[1],
+	// 			}
+	// 			tree.addCountry(str[0], ops)
+	// 		}
+	// 	}
+	// }
 
 	fmt.Println("Processing Increment.......")
 	// Value of M and N to verify
@@ -147,16 +188,18 @@ func main() {
 			} else if delay < 7200 {
 				tree.findAndIncrement("totalMessagesLessThan2hour", operator, country)
 			}
-			tree.findAndIncrement("totalMessagesReceived", operator, country)
 		}
 	}
 
 	tree.totalTree()
-	tree.displaySource()
+	//	tree.displaySource()
 
 	// Uncomment this if we want to get all Country
 	//tree.calculateSDRPercentage()
 
 	// Uncomment this if we want to get one pariticular country
-	tree.sdrAlertOneCountry("Japan")
+	//tree.sdrAlertOneCountry("Japan")
+
+	// Uncomment this if you want to see the details of the country and its operator
+	tree.findCountryAndOperatorDisplay("Japan", "NTT DoCoMo")
 }

@@ -15,6 +15,13 @@ import (
 // Operators -> Store each of the OPerator
 type Operators struct {
 	operatorName                   string
+	totalMessagesDelivered         int
+	totalMessagesRejected          int
+	totalMessagesInitial           int
+	totalMessagesDeliveredDirect   int
+	totalMessagesExpired           int
+	totalMessagesDeleted           int
+	totalMessagesUndeliverable     int
 	totalMessagesReceived          int
 	totalMessagesLessThan10mins    int
 	totalMessagesLessThan1min      int
@@ -133,6 +140,25 @@ func (tree *CountryTree) addCountry(country string, ops Operators) {
 // ****************************************************************************************************************
 // 												DISPLAY
 
+func (node *OperatorNode) displaySingleOperator() {
+	fmt.Println("Name of Operator: ", node.operas.operatorName)
+	fmt.Println("Total Message Received: ", node.operas.totalMessagesReceived)
+	fmt.Println("Total Message Less Than 10 seconds: ", node.operas.totalMessagesLessThan10seconds)
+	fmt.Println("Total Message Less Than 1 min: ", node.operas.totalMessagesLessThan1min)
+	fmt.Println("Total Message Less Than 10 mins: ", node.operas.totalMessagesLessThan10mins)
+	fmt.Println("Total Message Less Than 1 hour: ", node.operas.totalMessagesLessThan1hour)
+	fmt.Println("Total Message Less Than 2 hours: ", node.operas.totalMessagesLessThan2hour)
+	fmt.Println("Total Message Received status 4: ", node.operas.totalMessagesDLRS)
+	fmt.Println("Total Messages that are Initial: ", node.operas.totalMessagesInitial)
+	fmt.Println("Total Messages that are Rejected: ", node.operas.totalMessagesRejected)
+	fmt.Println("Total Messages that are Delivered: ", node.operas.totalMessagesDelivered)
+	fmt.Println("Total Messages that are Expired: ", node.operas.totalMessagesExpired)
+	fmt.Println("Total Messages that are Undeliverable: ", node.operas.totalMessagesUndeliverable)
+	fmt.Println("Total Messages that are Deleted: ", node.operas.totalMessagesDeleted)
+	fmt.Println("Total Messages that are Delivered Direct: ", node.operas.totalMessagesDeliveredDirect)
+
+}
+
 func (node *OperatorNode) display() {
 	if node == nil {
 		return
@@ -145,6 +171,13 @@ func (node *OperatorNode) display() {
 	fmt.Println("Total Message Less Than 1 hour: ", node.operas.totalMessagesLessThan1hour)
 	fmt.Println("Total Message Less Than 2 hours: ", node.operas.totalMessagesLessThan2hour)
 	fmt.Println("Total Message Received status 4: ", node.operas.totalMessagesDLRS)
+	fmt.Println("Total Messages that are Initial: ", node.operas.totalMessagesInitial)
+	fmt.Println("Total Messages that are Rejected: ", node.operas.totalMessagesRejected)
+	fmt.Println("Total Messages that are Delivered: ", node.operas.totalMessagesDelivered)
+	fmt.Println("Total Messages that are Expired: ", node.operas.totalMessagesExpired)
+	fmt.Println("Total Messages that are Undeliverable: ", node.operas.totalMessagesUndeliverable)
+	fmt.Println("Total Messages that are Deleted: ", node.operas.totalMessagesDeleted)
+	fmt.Println("Total Messages that are Delivered Direct: ", node.operas.totalMessagesDeliveredDirect)
 	node.leftOperatorNode.display()
 	node.rightOperatorNode.display()
 }
@@ -190,6 +223,42 @@ func (tree *CountryTree) displaySource() {
 	tree.CountryNodeRoot.displaySouce()
 }
 
+func (node *OperatorNode) findCountryAndOperatorDisplay(name string) {
+	if node == nil {
+		return
+	}
+	compare := strings.Compare(node.operas.operatorName, name)
+	if compare < 0 {
+		node.leftOperatorNode.findCountryAndOperatorDisplay(name)
+	} else if compare > 0 {
+		node.rightOperatorNode.findCountryAndOperatorDisplay(name)
+	} else {
+		node.displaySingleOperator()
+		return
+	}
+}
+func (node *CountryNode) findCountryAndOperatorDisplay(countryName, opsName string) {
+	if node == nil {
+		return
+	}
+	compare := strings.Compare(node.countryName, countryName)
+	if compare < 0 {
+		node.leftCountryNode.findCountryAndOperatorDisplay(countryName, opsName)
+	} else if compare > 0 {
+		node.rightCountryNode.findCountryAndOperatorDisplay(countryName, opsName)
+	} else {
+		node.operatorRoot.findCountryAndOperatorDisplay(opsName)
+		return
+	}
+}
+
+func (tree *CountryTree) findCountryAndOperatorDisplay(countryName, opsName string) {
+	if tree.CountryNodeRoot == nil {
+		return
+	}
+	tree.CountryNodeRoot.findCountryAndOperatorDisplay(countryName, opsName)
+}
+
 // ****************************************************************************************************************
 // 												FIND AND INCREMENT
 
@@ -214,6 +283,20 @@ func (node *OperatorNode) findAndIncrementOPerator(typeIncrement, opsName string
 			node.operas.totalMessagesLessThan10seconds++
 		case "totalMessagesReceived":
 			node.operas.totalMessagesReceived++
+		case "totalMessagesDelivered":
+			node.operas.totalMessagesDelivered++
+		case "totalMessagesRejected":
+			node.operas.totalMessagesRejected++
+		case "totalMessagesInitial":
+			node.operas.totalMessagesInitial++
+		case "totalMessagesExpired":
+			node.operas.totalMessagesExpired++
+		case "totalMessagesDeleted":
+			node.operas.totalMessagesDeleted++
+		case "totalMessagesUndeliverable":
+			node.operas.totalMessagesUndeliverable++
+		case "totalMessagesDeliveredDirect":
+			node.operas.totalMessagesDeliveredDirect++
 		default:
 		}
 		return true
