@@ -15,6 +15,7 @@ import (
 // Operators -> Store each of the OPerator
 type Operators struct {
 	operatorName                   string
+	totalMessagesPending           int
 	totalMessagesDelivered         int
 	totalMessagesRejected          int
 	totalMessagesInitial           int
@@ -156,7 +157,7 @@ func (node *OperatorNode) displaySingleOperator() {
 	fmt.Println("Total Messages that are Undeliverable: ", node.operas.totalMessagesUndeliverable)
 	fmt.Println("Total Messages that are Deleted: ", node.operas.totalMessagesDeleted)
 	fmt.Println("Total Messages that are Delivered Direct: ", node.operas.totalMessagesDeliveredDirect)
-
+	fmt.Println("Total Messages that are pending: ", node.operas.totalMessagesPending)
 }
 
 func (node *OperatorNode) display() {
@@ -297,6 +298,8 @@ func (node *OperatorNode) findAndIncrementOPerator(typeIncrement, opsName string
 			node.operas.totalMessagesUndeliverable++
 		case "totalMessagesDeliveredDirect":
 			node.operas.totalMessagesDeliveredDirect++
+		case "totalMessagesPending":
+			node.operas.totalMessagesPending++
 		default:
 		}
 		return true
@@ -504,3 +507,6 @@ func (tree *CountryTree) sdrAlertOneCountry(name string) {
 	}
 	tree.CountryNodeRoot.sdrAlertOneCountry(name)
 }
+
+// ****************************************************************************************************************
+//

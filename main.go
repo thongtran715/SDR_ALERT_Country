@@ -76,13 +76,13 @@ func main() {
 	for scanner.Scan() {
 		arr := strings.Split(scanner.Text(), ";")
 
-		if arr[4] == "M" {
-			operator := strings.Split(arr[9], ":")
+		if arr[TYPE] == "M" {
+			operator := strings.Split(arr[ROUTING_DEST], ":")
 			if operator[0] != "null" {
 				aCDR := CDR{
-					timestamp: arr[2],
-					state:     arr[5],
-					id:        arr[19],
+					timestamp: arr[ENTRY_TS],
+					state:     arr[STATE],
+					id:        arr[ID],
 					operator:  operator[2],
 				}
 				id := aCDR.id
@@ -117,14 +117,14 @@ func main() {
 				}
 			}
 		} else {
-			operator := strings.Split(arr[9], ":")
+			operator := strings.Split(arr[ROUTING_DEST], ":")
 			if operator[0] != "null" {
 				aCDR := CDR{
-					timestamp: arr[3],
-					state:     arr[5],
-					id:        arr[20],
+					timestamp: arr[STATE_TS],
+					state:     arr[STATE],
+					id:        arr[REF_ID],
 					operator:  operator[2],
-					statusIND: arr[27],
+					statusIND: arr[ATTEMPTS],
 				}
 				id := aCDR.id
 				cdr, ok := cdrNTable[id]
@@ -142,35 +142,21 @@ func main() {
 
 		}
 	}
-	fmt.Println("Processing.......")
 
-	// for keyM := range cdrMTable {
-	// 	valueN, existed := cdrNTable[keyM]
-	// 	if existed {
-	// 		imsi := valueN.operator
-	// 		if imsi != "000000" {
-	// 			str := strings.Split(countryOperatorMCCMNC[imsi], ";")
-	// 			ops := Operators{
-	// 				operatorName: str[1],
-	// 			}
-	// 			tree.addCountry(str[0], ops)
-	// 		}
-	// 	}
-	// }
-
-	fmt.Println("Processing Increment.......")
+	fmt.Println("Processing .......")
 	// Value of M and N to verify
 	for keyM, valueM := range cdrMTable {
 		valueN, existed := cdrNTable[keyM]
+		imsi := valueM.operator
+		operator, country := "", ""
+		if imsi != "000000" {
+			str := strings.Split(countryOperatorMCCMNC[imsi], ";")
+			operator = str[1]
+			country = str[0]
+		}
 		if existed {
 			status := valueN.statusIND
-			imsi := valueN.operator
-			operator, country := "", ""
-			if imsi != "000000" {
-				str := strings.Split(countryOperatorMCCMNC[imsi], ";")
-				operator = str[1]
-				country = str[0]
-			}
+
 			timeM, _ := time.Parse(longForm, valueM.timestamp)
 			timeN, _ := time.Parse(longForm, valueN.timestamp)
 			delay := (timeN.Day()-timeM.Day())*84000 + (timeN.Hour()-timeM.Hour())*3600 + (timeN.Minute()-timeM.Minute())*60 + (timeN.Second() - timeM.Second())
@@ -188,6 +174,9 @@ func main() {
 			} else if delay < 7200 {
 				tree.findAndIncrement("totalMessagesLessThan2hour", operator, country)
 			}
+		} else {
+			// If the M does not the N respond than it will be pending
+			tree.findAndIncrement("totalMessagesPending", operator, country)
 		}
 	}
 
@@ -201,5 +190,5 @@ func main() {
 	//tree.sdrAlertOneCountry("Japan")
 
 	// Uncomment this if you want to see the details of the country and its operator
-	tree.findCountryAndOperatorDisplay("Japan", "NTT DoCoMo")
+	tree.findCountryAndOperatorDisplay("Japan", "au")
 }
